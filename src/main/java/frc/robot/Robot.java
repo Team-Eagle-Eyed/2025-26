@@ -4,100 +4,184 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.util.Units;
+// WPILIB IMPORTS
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
+
+// CTRE IMPORTS
+import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
+
+// REVROBOTICS IMPORTS
+import com.revrobotics.PersistMode;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkLimitSwitch;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkFlexConfig;
+import com.revrobotics.spark.config.LimitSwitchConfig.Behavior;
+import com.revrobotics.spark.config.LimitSwitchConfig.Type;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 public class Robot extends TimedRobot {
-  private Command m_autonomousCommand;
+  private final TalonFX leftMoter = new TalonFX(3);
+  private final TalonFX rightMoter = new TalonFX(1);
 
-  private final RobotContainer m_robotContainer;
+  private final PIDController turnPID = new PIDController(0.02, 0.0, 0.001);
 
-  private final boolean kUseLimelight = false;
+  private final DutyCycleOut leftOut = new DutyCycleOut(0);
+  private final DutyCycleOut rightOut = new DutyCycleOut(0);
+
+  private SparkFlex IntakeMotor;
+  private SparkFlexConfig IntakeRollerConfig;
+  private SparkLimitSwitch IntakeForwardLimit;
+  private SparkLimitSwitch IntakeBackwardsLimit;
+  private RelativeEncoder IntakeEncoder;
+
+  private SparkMax IntakeExtender;
+  private SparkMaxConfig IntakeExtenderConfig;
+  private SparkLimitSwitch IntakeExtenderForwardLimit;
+  private SparkLimitSwitch IntakeExtenderBackwardsLimit;
+  private RelativeEncoder IntakeExtenderEncoder;
+
+  private SparkMax AgitatorMotor;
+  private SparkMaxConfig AgitatorConfig;
+  private SparkLimitSwitch AgitatorForwardLimit;
+  private SparkLimitSwitch AgitatorBackwardsLimit;
+  private RelativeEncoder AgitatorEncoder;
 
   public Robot() {
-    m_robotContainer = new RobotContainer();
+    // Define Motor (CHANGE IDS)
+    IntakeMotor =  new SparkFlex(0, MotorType.kBrushless);
+    IntakeExtender = new SparkMax(0, MotorType.kBrushless);
+    AgitatorMotor = new SparkMax(0, MotorType.kBrushless);
+
+    // Setup Limit Configs
+    IntakeForwardLimit = IntakeMotor.getForwardLimitSwitch();
+    IntakeExtenderForwardLimit = IntakeExtender.getForwardLimitSwitch();
+    AgitatorForwardLimit = AgitatorMotor.getForwardLimitSwitch();
+    IntakeBackwardsLimit = IntakeMotor.getReverseLimitSwitch();
+    IntakeExtenderBackwardsLimit = IntakeExtender.getReverseLimitSwitch();
+    AgitatorBackwardsLimit = AgitatorMotor.getReverseLimitSwitch();
+    IntakeEncoder = IntakeMotor.getEncoder();
+    IntakeExtenderEncoder = IntakeExtender.getEncoder();
+    AgitatorEncoder = AgitatorMotor.getEncoder();
+
+    IntakeRollerConfig = new SparkFlexConfig();
+    IntakeExtenderConfig = new SparkMaxConfig();
+    AgitatorConfig = new SparkMaxConfig();
+
+    IntakeRollerConfig.idleMode(IdleMode.kBrake);
+    IntakeExtenderConfig.idleMode(IdleMode.kBrake);
+    AgitatorConfig.idleMode(IdleMode.kBrake);
+
+    IntakeExtenderConfig.limitSwitch
+    .forwardLimitSwitchType(Type.kNormallyOpen)
+    .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
+    .reverseLimitSwitchType(Type.kNormallyOpen)
+    .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor); 
+    
+    IntakeRollerConfig.limitSwitch
+    .forwardLimitSwitchType(Type.kNormallyOpen)
+    .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
+    .reverseLimitSwitchType(Type.kNormallyOpen)
+    .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
+
+    AgitatorConfig.limitSwitch
+    .forwardLimitSwitchType(Type.kNormallyOpen)
+    .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
+    .reverseLimitSwitchType(Type.kNormallyOpen)
+    .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
+
+    IntakeExtenderConfig.softLimit
+    .forwardSoftLimit(25)
+    .forwardSoftLimitEnabled(true)
+    .reverseSoftLimit(-25)
+    .reverseSoftLimitEnabled(true);
+
+    IntakeRollerConfig.softLimit
+    .forwardSoftLimit(17)
+    .forwardSoftLimitEnabled(true)
+    .reverseSoftLimit(-17)
+    .reverseSoftLimitEnabled(true);
+
+    AgitatorConfig.softLimit
+    .forwardSoftLimit(20)
+    .forwardSoftLimitEnabled(true)
+    .reverseSoftLimit(-20)
+    .reverseSoftLimitEnabled(true);
+
+    IntakeMotor.configure(IntakeRollerConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+    IntakeExtender.configure(IntakeExtenderConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+    AgitatorMotor.configure(AgitatorConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+
+    IntakeEncoder.setPosition(0);
+    IntakeExtenderEncoder.setPosition(0);
+    AgitatorEncoder.setPosition(0);
+
+    SmartDashboard.setDefaultBoolean("Intake Roller Direction", true);
+    SmartDashboard.setDefaultBoolean("Intake Extender Direction", true);
+    SmartDashboard.setDefaultBoolean("Agitator Direction", true);
   }
 
   @Override
   public void robotPeriodic() {
-    CommandScheduler.getInstance().run();
+    // Update Smart Dashboard
 
-    /*
-     * This example of adding Limelight is very simple and may not be sufficient for on-field use.
-     * Users typically need to provide a standard deviation that scales with the distance to target
-     * and changes with number of tags available.
-     *
-     * This example is sufficient to show that vision integration is possible, though exact implementation
-     * of how to use vision should be tuned per-robot and to the team's specification.
-     */
-    if (kUseLimelight) {
-      var driveState = m_robotContainer.drivetrain.getState();
-      double headingDeg = driveState.Pose.getRotation().getDegrees();
-      double omegaRps = Units.radiansToRotations(driveState.Speeds.omegaRadiansPerSecond);
+    SmartDashboard.putBoolean("Intake Roller Forward Limit Rrached", IntakeForwardLimit.isPressed());
+    SmartDashboard.putBoolean("Intake Roller Backwards Limit Reached", IntakeBackwardsLimit.isPressed());
+    SmartDashboard.putNumber("Intake Roller Position", IntakeEncoder.getPosition());
 
-      LimelightHelpers.SetRobotOrientation("limelight", headingDeg, 0, 0, 0, 0, 0);
-      var llMeasurement = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
-      if (llMeasurement != null && llMeasurement.tagCount > 0 && Math.abs(omegaRps) < 2.0) {
-        m_robotContainer.drivetrain.addVisionMeasurement(llMeasurement.pose, llMeasurement.timestampSeconds);
-      }
+    SmartDashboard.putBoolean("Intake Extender Froward Limit Reached", IntakeExtenderForwardLimit.isPressed());
+    SmartDashboard.putBoolean("Intake Extender Backwards Limit Reached", IntakeExtenderBackwardsLimit.isPressed());
+    SmartDashboard.putNumber("Intake Extender Position", IntakeExtenderEncoder.getPosition());
+
+    SmartDashboard.putBoolean("Agitator Forward Limit Reached", AgitatorForwardLimit.isPressed());
+    SmartDashboard.putBoolean("Agitator Backwards Limit Reached", AgitatorBackwardsLimit.isPressed());
+    SmartDashboard.putNumber("Agitator Position", AgitatorEncoder.getPosition());
+  }
+
+  @Override
+  public void robotInit() {
+    TalonFXConfiguration leftConfig = new TalonFXConfiguration();
+    TalonFXConfiguration rightConfig = new TalonFXConfiguration();
+
+    leftConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    rightConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+    leftConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    rightConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    
+    leftMoter.getConfigurator().apply(leftConfig);
+    rightMoter.getConfigurator().apply(rightConfig);
+
+    turnPID.setTolerance(1.0);
+    turnPID.enableContinuousInput(-180.0, 180.0);
+  }
+
+  public void teleoPeriodic() {
+    double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0.0);
+    double turn = turnPID.calculate(tx, 0.0);
+    turn = Math.max(Math.min(turn, 0.5), -0.5);
+    leftOut.Output = turn;
+    rightOut.Output = turn;
+    leftMoter.setControl(leftOut);
+    rightMoter.setControl(rightOut);
+
+    if (turnPID.atSetpoint()) {
+        leftOut.Output = 0;
+        rightOut.Output = 0;
+        leftMoter.setControl(leftOut);
+        rightMoter.setControl(rightOut);
     }
   }
-
-  @Override
-  public void disabledInit() {}
-
-  @Override
-  public void disabledPeriodic() {}
-
-  @Override
-  public void disabledExit() {}
-
-  @Override
-  public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
-
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
-    }
-  }
-
-  @Override
-  public void autonomousPeriodic() {}
-
-  @Override
-  public void autonomousExit() {}
-
-  @Override
-  public void teleopInit() {
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.cancel();
-    }
-  }
-
-  @Override
-  public void teleopPeriodic() {
-    SmartDashboard.putNumber("Elevator Encoder", m_robotContainer.elevator.retEncoder());
-    // "At Max height (2.35) it will produce 30% power and will give full power (1.0 or 100%) when at the bottom (0 height).
-    m_robotContainer.driveSpeedLimiter = ((1 - (m_robotContainer.elevator.retEncoder() / 2.35)) * 0.7) + 0.3;
-  }
-
-  @Override
-  public void teleopExit() {}
-
-  @Override
-  public void testInit() {
-    CommandScheduler.getInstance().cancelAll();
-  }
-
-  @Override
-  public void testPeriodic() {}
-
-  @Override
-  public void testExit() {}
-
-  @Override
-  public void simulationPeriodic() {}
 }
