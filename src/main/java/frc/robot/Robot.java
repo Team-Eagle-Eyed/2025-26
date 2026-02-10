@@ -59,30 +59,46 @@ public class Robot extends TimedRobot {
   private SparkLimitSwitch AgitatorBackwardsLimit;
   private RelativeEncoder AgitatorEncoder;
 
+  private SparkMax Kicker;
+  private SparkMaxConfig KickerConfig;
+  private SparkLimitSwitch KickerForwardLimit;
+  private SparkLimitSwitch KickerBackwardsLimit;
+  private RelativeEncoder KickerEncoder;
+
+
   public Robot() {
     // Define Motor (CHANGE IDS)
     IntakeMotor =  new SparkFlex(0, MotorType.kBrushless);
     IntakeExtender = new SparkMax(0, MotorType.kBrushless);
     AgitatorMotor = new SparkMax(0, MotorType.kBrushless);
+    Kicker = new SparkMax(0, MotorType.kBrushless);
 
     // Setup Limit Configs
     IntakeForwardLimit = IntakeMotor.getForwardLimitSwitch();
-    IntakeExtenderForwardLimit = IntakeExtender.getForwardLimitSwitch();
-    AgitatorForwardLimit = AgitatorMotor.getForwardLimitSwitch();
     IntakeBackwardsLimit = IntakeMotor.getReverseLimitSwitch();
-    IntakeExtenderBackwardsLimit = IntakeExtender.getReverseLimitSwitch();
-    AgitatorBackwardsLimit = AgitatorMotor.getReverseLimitSwitch();
     IntakeEncoder = IntakeMotor.getEncoder();
-    IntakeExtenderEncoder = IntakeExtender.getEncoder();
+
+    AgitatorForwardLimit = AgitatorMotor.getForwardLimitSwitch();
+    AgitatorBackwardsLimit = AgitatorMotor.getReverseLimitSwitch();
     AgitatorEncoder = AgitatorMotor.getEncoder();
+
+    IntakeExtenderForwardLimit = IntakeExtender.getForwardLimitSwitch();
+    IntakeExtenderBackwardsLimit = IntakeExtender.getReverseLimitSwitch();
+    IntakeExtenderEncoder = IntakeExtender.getEncoder();
+
+    KickerForwardLimit = Kicker.getForwardLimitSwitch();
+    KickerBackwardsLimit = Kicker.getReverseLimitSwitch();
+    KickerEncoder = Kicker.getEncoder();
 
     IntakeRollerConfig = new SparkFlexConfig();
     IntakeExtenderConfig = new SparkMaxConfig();
     AgitatorConfig = new SparkMaxConfig();
+    KickerConfig = new SparkMaxConfig();
 
     IntakeRollerConfig.idleMode(IdleMode.kBrake);
     IntakeExtenderConfig.idleMode(IdleMode.kBrake);
     AgitatorConfig.idleMode(IdleMode.kBrake);
+    KickerConfig.idleMode(IdleMode.kBrake);
 
     IntakeExtenderConfig.limitSwitch
     .forwardLimitSwitchType(Type.kNormallyOpen)
@@ -97,6 +113,12 @@ public class Robot extends TimedRobot {
     .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
 
     AgitatorConfig.limitSwitch
+    .forwardLimitSwitchType(Type.kNormallyOpen)
+    .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
+    .reverseLimitSwitchType(Type.kNormallyOpen)
+    .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
+
+    KickerConfig.limitSwitch
     .forwardLimitSwitchType(Type.kNormallyOpen)
     .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
     .reverseLimitSwitchType(Type.kNormallyOpen)
@@ -120,35 +142,24 @@ public class Robot extends TimedRobot {
     .reverseSoftLimit(-20)
     .reverseSoftLimitEnabled(true);
 
+    KickerConfig.softLimit
+    .forwardSoftLimit(25)
+    .forwardSoftLimitEnabled(true)
+    .reverseSoftLimit(-25)
+    .reverseSoftLimitEnabled(true);
+
     IntakeMotor.configure(IntakeRollerConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
     IntakeExtender.configure(IntakeExtenderConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
     AgitatorMotor.configure(AgitatorConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+    Kicker.configure(KickerConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
 
     IntakeEncoder.setPosition(0);
     IntakeExtenderEncoder.setPosition(0);
     AgitatorEncoder.setPosition(0);
-
-    SmartDashboard.setDefaultBoolean("Intake Roller Direction", true);
-    SmartDashboard.setDefaultBoolean("Intake Extender Direction", true);
-    SmartDashboard.setDefaultBoolean("Agitator Direction", true);
+    KickerEncoder.setPosition(0);
   }
 
-  @Override
-  public void robotPeriodic() {
-    // Update Smart Dashboard
-
-    SmartDashboard.putBoolean("Intake Roller Forward Limit Rrached", IntakeForwardLimit.isPressed());
-    SmartDashboard.putBoolean("Intake Roller Backwards Limit Reached", IntakeBackwardsLimit.isPressed());
-    SmartDashboard.putNumber("Intake Roller Position", IntakeEncoder.getPosition());
-
-    SmartDashboard.putBoolean("Intake Extender Froward Limit Reached", IntakeExtenderForwardLimit.isPressed());
-    SmartDashboard.putBoolean("Intake Extender Backwards Limit Reached", IntakeExtenderBackwardsLimit.isPressed());
-    SmartDashboard.putNumber("Intake Extender Position", IntakeExtenderEncoder.getPosition());
-
-    SmartDashboard.putBoolean("Agitator Forward Limit Reached", AgitatorForwardLimit.isPressed());
-    SmartDashboard.putBoolean("Agitator Backwards Limit Reached", AgitatorBackwardsLimit.isPressed());
-    SmartDashboard.putNumber("Agitator Position", AgitatorEncoder.getPosition());
-  }
+// ADD SMARTDASHBOARD UPDATES
 
   @Override
   public void robotInit() {
