@@ -47,6 +47,27 @@ public class Robot extends TimedRobot {
   private SparkLimitSwitch IntakeBackwardsLimit;
   private RelativeEncoder IntakeEncoder;
 
+  // Pre Shooter
+  private SparkFlex PreShooterMotor;
+  private SparkFlexConfig PreShooterConfig;
+  private SparkLimitSwitch PreShooterForwardLimit;
+  private SparkLimitSwitch PreShooterBackwardsLimit;
+  private RelativeEncoder PreShooterEncoder;
+
+  // Shooter Left
+  private SparkFlex ShooterLeftMotor;
+  private SparkFlexConfig ShooterLeftConfig;
+  private SparkLimitSwitch ShooterLeftForwardLimit;
+  private SparkLimitSwitch ShooterLeftBackwardsLimit;
+  private RelativeEncoder ShooterLeftEncoder;
+
+  // Shooter Right
+  private SparkFlex ShooterRightMotor;
+  private SparkFlexConfig ShooterRightConfig;
+  private SparkLimitSwitch ShooterRightForwardLimit;
+  private SparkLimitSwitch ShooterRightBackwardsLimit;
+  private RelativeEncoder ShooterRightEncoder;
+
   private SparkMax IntakeExtender;
   private SparkMaxConfig IntakeExtenderConfig;
   private SparkLimitSwitch IntakeExtenderForwardLimit;
@@ -69,6 +90,9 @@ public class Robot extends TimedRobot {
   public Robot() {
     // Define Motor (CHANGE IDS)
     IntakeMotor =  new SparkFlex(0, MotorType.kBrushless);
+    PreShooterMotor = new SparkFlex(1, MotorType.kBrushless); // TODO: Set correct CAN ID
+    ShooterLeftMotor = new SparkFlex(2, MotorType.kBrushless); // TODO: Set correct CAN ID
+    ShooterRightMotor = new SparkFlex(3, MotorType.kBrushless); // TODO: Set correct CAN ID
     IntakeExtender = new SparkMax(0, MotorType.kBrushless);
     AgitatorMotor = new SparkMax(0, MotorType.kBrushless);
     Kicker = new SparkMax(0, MotorType.kBrushless);
@@ -77,6 +101,18 @@ public class Robot extends TimedRobot {
     IntakeForwardLimit = IntakeMotor.getForwardLimitSwitch();
     IntakeBackwardsLimit = IntakeMotor.getReverseLimitSwitch();
     IntakeEncoder = IntakeMotor.getEncoder();
+
+    PreShooterForwardLimit = PreShooterMotor.getForwardLimitSwitch();
+    PreShooterBackwardsLimit = PreShooterMotor.getReverseLimitSwitch();
+    PreShooterEncoder = PreShooterMotor.getEncoder();
+
+    ShooterLeftForwardLimit = ShooterLeftMotor.getForwardLimitSwitch();
+    ShooterLeftBackwardsLimit = ShooterLeftMotor.getReverseLimitSwitch();
+    ShooterLeftEncoder = ShooterLeftMotor.getEncoder();
+
+    ShooterRightForwardLimit = ShooterRightMotor.getForwardLimitSwitch();
+    ShooterRightBackwardsLimit = ShooterRightMotor.getReverseLimitSwitch();
+    ShooterRightEncoder = ShooterRightMotor.getEncoder();
 
     AgitatorForwardLimit = AgitatorMotor.getForwardLimitSwitch();
     AgitatorBackwardsLimit = AgitatorMotor.getReverseLimitSwitch();
@@ -91,11 +127,17 @@ public class Robot extends TimedRobot {
     KickerEncoder = Kicker.getEncoder();
 
     IntakeRollerConfig = new SparkFlexConfig();
+    PreShooterConfig = new SparkFlexConfig();
+    ShooterLeftConfig = new SparkFlexConfig();
+    ShooterRightConfig = new SparkFlexConfig();
     IntakeExtenderConfig = new SparkMaxConfig();
     AgitatorConfig = new SparkMaxConfig();
     KickerConfig = new SparkMaxConfig();
 
     IntakeRollerConfig.idleMode(IdleMode.kBrake);
+    PreShooterConfig.idleMode(IdleMode.kBrake);
+    ShooterLeftConfig.idleMode(IdleMode.kBrake);
+    ShooterRightConfig.idleMode(IdleMode.kBrake);
     IntakeExtenderConfig.idleMode(IdleMode.kBrake);
     AgitatorConfig.idleMode(IdleMode.kBrake);
     KickerConfig.idleMode(IdleMode.kBrake);
@@ -107,6 +149,24 @@ public class Robot extends TimedRobot {
     .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor); 
     
     IntakeRollerConfig.limitSwitch
+    .forwardLimitSwitchType(Type.kNormallyOpen)
+    .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
+    .reverseLimitSwitchType(Type.kNormallyOpen)
+    .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
+
+    PreShooterConfig.limitSwitch
+    .forwardLimitSwitchType(Type.kNormallyOpen)
+    .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
+    .reverseLimitSwitchType(Type.kNormallyOpen)
+    .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
+
+    ShooterLeftConfig.limitSwitch
+    .forwardLimitSwitchType(Type.kNormallyOpen)
+    .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
+    .reverseLimitSwitchType(Type.kNormallyOpen)
+    .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
+
+    ShooterRightConfig.limitSwitch
     .forwardLimitSwitchType(Type.kNormallyOpen)
     .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
     .reverseLimitSwitchType(Type.kNormallyOpen)
@@ -136,6 +196,24 @@ public class Robot extends TimedRobot {
     .reverseSoftLimit(-17)
     .reverseSoftLimitEnabled(true);
 
+    PreShooterConfig.softLimit
+    .forwardSoftLimit(50)
+    .forwardSoftLimitEnabled(true)
+    .reverseSoftLimit(-50)
+    .reverseSoftLimitEnabled(true);
+
+    ShooterLeftConfig.softLimit
+    .forwardSoftLimit(140)
+    .forwardSoftLimitEnabled(true)
+    .reverseSoftLimit(-140)
+    .reverseSoftLimitEnabled(true);
+
+    ShooterRightConfig.softLimit
+    .forwardSoftLimit(140)
+    .forwardSoftLimitEnabled(true)
+    .reverseSoftLimit(-140)
+    .reverseSoftLimitEnabled(true);
+
     AgitatorConfig.softLimit
     .forwardSoftLimit(20)
     .forwardSoftLimitEnabled(true)
@@ -149,11 +227,17 @@ public class Robot extends TimedRobot {
     .reverseSoftLimitEnabled(true);
 
     IntakeMotor.configure(IntakeRollerConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+    PreShooterMotor.configure(PreShooterConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+    ShooterLeftMotor.configure(ShooterLeftConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+    ShooterRightMotor.configure(ShooterRightConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
     IntakeExtender.configure(IntakeExtenderConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
     AgitatorMotor.configure(AgitatorConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
     Kicker.configure(KickerConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
 
     IntakeEncoder.setPosition(0);
+    PreShooterEncoder.setPosition(0);
+    ShooterLeftEncoder.setPosition(0);
+    ShooterRightEncoder.setPosition(0);
     IntakeExtenderEncoder.setPosition(0);
     AgitatorEncoder.setPosition(0);
     KickerEncoder.setPosition(0);
