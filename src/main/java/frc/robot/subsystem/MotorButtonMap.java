@@ -8,19 +8,32 @@ public class MotorButtonMap {
     private final Joystick driverController;
     private final Joystick operatorController;
     private final Robot robot;
+    // Expose drive logic as a Runnable field
+    public final Runnable driveWithJoysticks;
 
     public MotorButtonMap(Joystick driverController, Joystick operatorController, Robot robot) {
         this.driverController = driverController;
         this.operatorController = operatorController;
         this.robot = robot;
         configureButtonBindings();
+        driveWithJoysticks = () -> {
+            double l1 = driverController.getRawAxis(2);
+            double forward = -driverController.getRawAxis(1);
+            double rotation = driverController.getRawAxis(0);
+            if (l1 > 0.05) {
+                double speed = l1;
+                double left = (forward + rotation) * speed;
+                double right = (forward - rotation) * speed;
+                robot.leftMotor.set(left);
+                robot.rightMotor.set(right);
+            } else {
+                robot.leftMotor.set(0);
+                robot.rightMotor.set(0);
+            }
+        };
     }
 
     private void configureButtonBindings() {
-        double leftSpeed = -driverController.getRawAxis(1); // Left stick Y
-        double rightSpeed = -driverController.getRawAxis(5); // Right stick Y
-        robot.leftMotor.set(leftSpeed);
-        robot.rightMotor.set(rightSpeed);
 
         // Button 1 (A on Xbox, Trigger on Logitech): Intake Forward
         new JoystickButton(operatorController, 1)
