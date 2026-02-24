@@ -90,9 +90,9 @@ public class Robot extends TimedRobot {
   public Robot() {
     // Define Motor (CHANGE IDS)
     IntakeMotor =  new SparkFlex(0, MotorType.kBrushless);
-    PreShooterMotor = new SparkFlex(1, MotorType.kBrushless); // TODO: Set correct CAN ID
-    ShooterLeftMotor = new SparkFlex(2, MotorType.kBrushless); // TODO: Set correct CAN ID
-    ShooterRightMotor = new SparkFlex(3, MotorType.kBrushless); // TODO: Set correct CAN ID
+    PreShooterMotor = new SparkFlex(0, MotorType.kBrushless); // TODO: Set correct CAN ID
+    ShooterLeftMotor = new SparkFlex(0, MotorType.kBrushless); // TODO: Set correct CAN ID
+    ShooterRightMotor = new SparkFlex(0, MotorType.kBrushless); // TODO: Set correct CAN ID
     IntakeExtender = new SparkMax(0, MotorType.kBrushless);
     AgitatorMotor = new SparkMax(0, MotorType.kBrushless);
     Kicker = new SparkMax(0, MotorType.kBrushless);
