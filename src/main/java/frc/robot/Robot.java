@@ -33,8 +33,15 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 public class Robot extends TimedRobot {
-  private final TalonFX leftMoter = new TalonFX(3);
-  private final TalonFX rightMoter = new TalonFX(1);
+  private final TalonFX ftleftMotor = new TalonFX(3);
+  private final TalonFX ftrightMotor = new TalonFX(1);
+  private final TalonFX fdleftMotor = new TalonFX(4);
+  private final TalonFX fdrightMotor = new TalonFX(2);
+
+  private final TalonFX btleftMotor = new TalonFX(5);
+  private final TalonFX btrightMotor = new TalonFX(7);
+  private final TalonFX bdleftMotor = new TalonFX(6);
+  private final TalonFX bdrightMotor = new TalonFX(8);
 
   private final PIDController turnPID = new PIDController(0.02, 0.0, 0.001);
 
